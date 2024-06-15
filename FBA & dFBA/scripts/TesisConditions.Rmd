@@ -1,0 +1,161 @@
+---
+title: "TesisConditions"
+author: "Jeremy"
+date: "2023-07-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Library
+
+```{r}
+#| include: false
+library(gt)
+library(tidyverse)
+library(esquisse)
+library(lubridate)
+library(RColorBrewer)
+library(dplyr)
+library(esquisse)
+library(openxlsx)
+library(rmarkdown)
+library(lubridate)
+library(corrr)
+library(knitr)
+library(pheatmap)
+library(igraph)
+library(ggraph)
+library(hrbrthemes)
+library(extrafont)
+library(widyr)
+```
+
+
+## Import Database
+
+```{r}
+database1 = read_csv("tabla-1.1.csv")
+database2 = read_csv("tabla-2.csv")
+database3 = read_csv("tabla-3.csv")
+```
+
+```{r}
+# Assuming df is your dataframe
+df_long <- database1 %>% pivot_longer(cols = c("Glucose", "Isobutanol", "Isocitrate", "Pyruvate", "Propionate", "Stearate", "Succinate", "Xylose"), names_to = "variable", values_to = "value")
+```
+
+```{r}
+ggplot(df_long, aes(x=names, y=value, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge()) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Name", y = "Value", fill = "Variable") 
+```
+
+
+```{r}
+# Calculate means and standard deviations
+summary_stats <- df_long %>%
+  group_by(names, variable) %>%
+  summarise(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE))
+
+# Create the bar plot
+p <- ggplot(summary_stats, aes(x=names, y=mean, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge(), colour="white", size=0.5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.2, position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Predicted Production of Valuable Compounds", y = "mmol*gDW of Biomass", fill = "Medium")
+
+print(p)
+
+```
+
+```{r}
+# Create the bar plot
+p <- ggplot(summary_stats, aes(x=names, y=mean, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", size=0.5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.2, position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Predicted Production of Valuable Compounds", y = "mmol*gDW of Biomass", fill = "Medium") +
+  facet_wrap(~variable)
+
+print(p)
+```
+
+```{r}
+# Filter the data
+filtered_stats <- summary_stats %>% 
+  filter(variable %in% c("Glucose", "Xylose", "Succinate"))
+
+# Create the bar plot
+p <- ggplot(filtered_stats, aes(x=names, y=mean, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", size=0.5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.2, position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(y = "mmol*gDW", fill = "Medium") +
+  facet_wrap(~variable) +
+  scale_fill_manual(values=c("Glucose" = "#999999", "Xylose" = "#E69F00", "Succinate" = "#009E73")) +
+  geom_text(aes(label=sprintf("%.5f", mean)), vjust=-0.3, position=position_dodge(width=0.5), size=2)
+
+print(p)
+```
+
+```{r}
+# Filter the data
+filtered_stats <- summary_stats %>% 
+  filter(variable %in% c("Stearate", "Isobutanol", "Isocitrate"))
+
+# Create the bar plot
+p <- ggplot(filtered_stats, aes(x=names, y=mean, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", size=0.5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.2, position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Predicted Production of Valuable Compounds", y = "mmol*gDW", fill = "Medium") +
+  facet_wrap(~variable) +
+  geom_text(aes(label=sprintf("%.5f", mean)), vjust=-0.3, position=position_dodge(width=0.5), size=2)
+
+print(p)
+```
+
+```{r}
+# Filter the data
+filtered_stats <- summary_stats %>% 
+  filter(variable %in% c("Pyruvate","Propionate"))
+
+# Create the bar plot
+p <- ggplot(filtered_stats, aes(x=names, y=mean, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", size=0.5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.2, position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Predicted Production of Valuable Compounds", y = "mmol*gDW", fill = "Medium") +
+  facet_wrap(~variable) +
+  scale_fill_manual(values=c("Pyruvate" = "#56B4E9", "Propionate" = "#0072B2")) +
+  geom_text(aes(label=sprintf("%.5f", mean)), vjust=-0.3, position=position_dodge(width=0.5), size=2)
+
+print(p)
+```
+
+```{r}
+# Filter the data
+filtered_stats <- summary_stats %>% 
+  filter(variable %in% c("Propionate"))
+
+# Create the bar plot
+p <- ggplot(filtered_stats, aes(x=names, y=mean, fill=variable)) + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", size=0.5) +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.2, position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Predicted Production of Valuable Compounds", y = "mmol*gDW of Biomass", fill = "Medium") +
+  facet_wrap(~variable) +
+  scale_fill_manual(values=c("Propionate" = "#0072B2")) +
+  geom_text(aes(label=sprintf("%.5f", mean)), vjust=-0.3, position=position_dodge(width=0.5), size=2)
+
+print(p)
+```
+
+
+
+

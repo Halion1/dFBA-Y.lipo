@@ -1,0 +1,189 @@
+---
+title: "RealDataValuable"
+author: "Jeremy"
+date: "2023-07-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Library
+
+```{r}
+#| include: false
+library(gt)
+library(tidyverse)
+library(esquisse)
+library(lubridate)
+library(RColorBrewer)
+library(dplyr)
+library(esquisse)
+library(openxlsx)
+library(rmarkdown)
+library(lubridate)
+library(corrr)
+library(knitr)
+library(pheatmap)
+library(igraph)
+library(ggraph)
+library(hrbrthemes)
+library(extrafont)
+library(widyr)
+library(Metrics)
+```
+
+
+## Import Database
+
+```{r}
+valuablecompounds = read_csv("real-data-vs-model-data-valuable.csv")
+errorcompounds = read_csv("errorforvaluable.csv")
+valuablecompounds2 = read_csv("real-data-vs-model-data-ocfa.csv")
+```
+
+```{r}
+# Pivot the data to long format
+df_long <- valuablecompounds %>%
+  pivot_longer(cols = c("Real Data", "new iYali", "enhanced iYali"), 
+               names_to = "Condition", 
+               values_to = "Value")
+
+# Create the grid bar plot
+ggplot(df_long, aes(x = name, y = Value, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~name, scales = "free") +
+  scale_fill_manual(values = c("Real Data" = "blue", 
+                               "new iYali" = "green", 
+                               "enhanced iYali" = "red")) +
+  labs(x = "Compound", y = "Value", fill = "Condition") +
+  theme_minimal()
+```
+
+```{r}
+# Convert Condition to factor with specific order
+df_long$Condition <- factor(C_df$Condition, levels = c("Real Data", "new iYali", "enhanced iYali"))
+
+# Create the grid bar plot
+ggplot(df_long, aes(x = name, y = Value, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge", colour="black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~name, scales = "free") +
+  scale_fill_manual(values = c("Real Data" = "#0072B2", 
+                               "new iYali" = "#009E73", 
+                               "enhanced iYali" = "#D55E00")) +
+  labs(x = "Condition", y = "mmol*gDW", fill = "Condition") +
+  theme_minimal() +
+  theme(strip.background = element_rect(colour = "black", fill = NA)) # Add a frame to each
+```
+
+```{r}
+# Calculate R-squared for each compound
+errorcompounds %>%
+  pivot_longer(cols = c('Real Data', 'new iYali'), names_to = "Condition", values_to = "Value") %>%
+  group_by(name) %>%
+  summarise(R_squared = summary(lm(Value ~ Condition))$r.squared)
+```
+
+```{r}
+# Pivot the data to long format
+df_long2 <- valuablecompounds2 %>%
+  pivot_longer(cols = c("Real Data", "new iYali", "enhanced iYali"), 
+               names_to = "Condition", 
+               values_to = "Value")
+
+# Extract rows where name is not "OCFA %" or "Lipid %"
+C_df <- df_long2 %>%
+  filter(!name %in% c("OCFA%", "Lipid%"))
+
+
+# Convert Condition to factor with specific order
+C_df$Condition <- factor(C_df$Condition, levels = c("Real Data", "new iYali", "enhanced iYali"))
+
+# Create the grid bar plot
+ggplot(C_df, aes(x = name, y = Value, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge", colour="black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~name, scales = "free") +
+  scale_fill_manual(values = c("Real Data" = "#0072B2", 
+                               "new iYali" = "#009E73", 
+                               "enhanced iYali" = "#D55E00")) +
+  labs(x = " ", y = "Percentage %", fill = "Condition")  +
+  theme_minimal() +
+  theme(strip.background = element_rect(colour = "black", fill = NA)) # Add a frame to each 
+```
+
+```{r}
+# Extract rows where Metric is "Lipid %"
+lipid_df <- df_long2 %>%
+  filter(name == "Lipid %")
+
+# Extract rows where Metric is "OCFA %"
+ocfa_df <- df_long2 %>%
+  filter(name == "OCFA %")
+
+
+# Create the grid bar plot
+ggplot(lipid_df, aes(x = name, y = Value, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge", colour="black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~name, scales = "free") +
+  scale_fill_manual(values = c("Real Data" = "#0072B2", 
+                               "new iYali" = "#009E73", 
+                               "enhanced iYali" = "#D55E00")) +
+  labs(x = " ", y = "Percentage %", fill = "Condition") +
+  ggtitle("Percentage of Production of OCFA and ECFA in Relation to Total Lipids Produced") +
+  theme_minimal() +
+  theme(strip.background = element_rect(colour = "black", fill = NA)) # Add a frame to each 
+```
+
+```{r}
+# Convert Condition to factor with specific order
+lipid_df$Condition <- factor(lipid_df$Condition, levels = c("Real Data", "new iYali", "enhanced iYali"))
+
+# Create the grid bar plot
+ggplot(lipid_df, aes(x = name, y = Value, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge", colour="black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~name, scales = "free") +
+  scale_fill_manual(values = c("Real Data" = "#0072B2", 
+                               "new iYali" = "#009E73", 
+                               "enhanced iYali" = "#D55E00")) +
+  labs(x = " ", y = "Percentage %", fill = "Condition") +
+  theme_minimal() +
+  theme(strip.background = element_rect(colour = "black", fill = NA)) # Add a frame to each
+```
+
+```{r}
+# Extract rows where Metric is "OCFA %"
+ocfa_df <- df_long2 %>%
+  filter(name == "OCFA%")
+
+# Convert Condition to factor with specific order
+ocfa_df$Condition <- factor(ocfa_df$Condition, levels = c("Real Data", "new iYali", "enhanced iYali"))
+
+
+
+# Create the grid bar plot
+ggplot(ocfa_df, aes(x = name, y = Value, fill = Condition)) +
+  geom_bar(stat = "identity", position = "dodge", colour="black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~name, scales = "free") +
+  scale_fill_manual(values = c("Real Data" = "#0072B2", 
+                               "new iYali" = "#009E73", 
+                               "enhanced iYali" = "#D55E00")) +
+  labs(x = " ", y = "Percentage %", fill = "Condition") +
+  theme_minimal() +
+  theme(strip.background = element_rect(colour = "black", fill = NA)) # Add a frame to each
+```
+
+
+
+
+
+
+
+
+

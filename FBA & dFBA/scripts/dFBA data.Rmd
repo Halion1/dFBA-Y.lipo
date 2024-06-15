@@ -1,0 +1,667 @@
+---
+title: "dFBA data"
+author: "Jeremy"
+date: "2023-07-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Library
+
+```{r}
+#| include: false
+library(gt)
+library(tidyverse)
+library(esquisse)
+library(lubridate)
+library(RColorBrewer)
+library(dplyr)
+library(esquisse)
+library(openxlsx)
+library(rmarkdown)
+library(lubridate)
+library(corrr)
+library(knitr)
+library(pheatmap)
+library(igraph)
+library(ggraph)
+library(hrbrthemes)
+library(extrafont)
+library(widyr)
+library(Metrics)
+```
+
+
+## Import Database
+
+```{r}
+glucoseprop = read_csv("Glucose-prop-1.csv")
+glucoseprop2 = read_csv("Glucose-prop-2.csv")
+residueglucoseprop2 = read_csv("residue-glucose-prop.csv")
+acetateprop = read_csv("acetate-prop-1.csv")
+residueacetateprop2 = read_csv("residue-acetate-prop.csv")
+propionate = read_csv("propionate-1.csv")
+residueprop2 = read_csv("residue-propionate.csv")
+```
+
+```{r}
+# Reshape data to long format including new data
+df_long <- glucoseprop %>%
+  pivot_longer(cols = c("new iYali Biomass",	"new iYali Glucose",	"new iYali Propanoate", "real data Biomass",	"real data Glucose",	"real data Propanoate"),
+               names_to = "variable",
+               values_to = "value")
+
+
+# Create line plot
+ggplot(df_long, aes(x=Time, y=value, color=variable)) +
+  geom_line() +
+  labs(x = "Time", y = "Value", color = "Variable") +
+  theme_minimal()
+```
+
+```{r}
+# Create point plot
+ggplot(df_long, aes(x=Time, y=value, color=variable)) +
+  geom_point() +
+  labs(x = "Time", y = "Value", color = "Variable") +
+  theme_minimal()
+
+```
+
+```{r}
+# Create point plot with hollow points
+ggplot(df_long, aes(x=Time, y=value, color=variable)) +
+  geom_point(shape=1, size=4) +  # shape=1 creates hollow points, size=4 increases point size
+  labs(x = "Time", y = "Value", color = "Variable") +
+  theme_minimal()
+
+```
+
+```{r}
+# Create point plot for original data and dashed line plot for new data
+ggplot(df_long, aes(x=Time, y=value, color=variable)) +
+  geom_point(data = filter(df_long, variable %in% c("real data Biomass",	"real data Glucose",	"real data Propanoate"))) +
+  geom_line(data = filter(df_long, variable %in% c("new iYali Biomass",	"new iYali Glucose",	"new iYali Propanoate")), 
+            linetype = "dashed", size = 1) +
+  scale_color_manual(values=c("real data Biomass" = "blue", 
+                              "real data Propanoate" = "red", 
+                              "real data Glucose" = "green",
+                              "new iYali Biomass" = "blue", 
+                              "new iYali Propanoate" = "red", 
+                              "new iYali Glucose" = "green")) +
+  labs(x = "Time", y = "Value", color = "Variable") +
+  theme_minimal()
+```
+
+```{r}
+# Reshape data to long format including new data
+df_long2 <- acetateprop %>%
+  pivot_longer(cols = c("real data Biomass",	"real data Propanoate",	"real data Acetate",	"new iYali Biomass",	"new iYali Acetate",	"new iYali Propanoate"),
+               names_to = "variable",
+               values_to = "value")
+```
+
+```{r}
+# Create point plot for original data and dashed line plot for new data
+ggplot(df_long2, aes(x=Time, y=value, color=variable)) +
+  geom_point(data = filter(df_long2, variable %in% c("real data Biomass",	"real data Acetate",	"real data Propanoate")), 
+             shape=7, size=4) +
+  geom_line(data = filter(df_long2, variable %in% c("new iYali Biomass",	"new iYali Acetate",	"new iYali Propanoate")), 
+            size = 1) +
+  scale_color_manual(values=c("real data Biomass" = "blue", 
+                              "real data Propanoate" = "red", 
+                              "real data Acetate" = "green",
+                              "new iYali Biomass" = "blue", 
+                              "new iYali Propanoate" = "red", 
+                              "new iYali Acetate" = "green")) +
+  labs(x = "Time steps (h)", y = "Acetate and Propanote (g/L) - Biomass (gDCW/L)", color = "Variable") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+
+```{r}
+# Reshape data to long format including new data
+df_long3 <- propionate %>%
+  pivot_longer(cols = c("real data Biomass",	"real data Propanoate",	"new iYali Biomass",	"new iYali Propanoate"),
+               names_to = "variable",
+               values_to = "value")
+```
+
+```{r}
+# Create point plot for original data and dashed line plot for new data
+ggplot(df_long3, aes(x=time, y=value, color=variable)) +
+  geom_point(data = filter(df_long3, variable %in% c("real data Biomass",	"real data Propanoate")), 
+             shape=7, size=4) +
+  geom_line(data = filter(df_long3, variable %in% c("new iYali Biomass",	"new iYali Propanoate")), 
+            size = 1) +
+  scale_color_manual(values=c("real data Biomass" = "blue", 
+                              "real data Propanoate" = "red",
+                              "new iYali Biomass" = "blue", 
+                              "new iYali Propanoate" = "red")) +
+  labs(x = "Time steps (h)", y = "Propanote (g/L) - Biomass (gDCW/L)", color = "Variable") +
+  theme_minimal()+
+  theme(legend.title = element_blank())
+```
+
+
+```{r}
+# Reshape data to long format including new data
+df_long4 <- glucoseprop2 %>%
+  pivot_longer(cols = c("real data Biomass",	"real data Propanoate",	"new iYali Biomass",	"new iYali Propanoate", "new iYali Glucose","real data Glucose"),
+               names_to = "variable",
+               values_to = "value")
+```
+
+```{r}
+# Create point plot for original data and dashed line plot for new data
+ggplot(df_long4, aes(x=Time, y=value, color=variable)) +
+  geom_point(data = filter(df_long4, variable %in% c("real data Biomass",	"real data Glucose",	"real data Propanoate")), 
+             shape=7, size=4) +
+  geom_line(data = filter(df_long4, variable %in% c("new iYali Biomass",	"new iYali Glucose",	"new iYali Propanoate")), 
+             size = 1) +
+  scale_color_manual(values=c("real data Biomass" = "blue", 
+                              "real data Propanoate" = "red", 
+                              "real data Glucose" = "green",
+                              "new iYali Biomass" = "blue", 
+                              "new iYali Propanoate" = "red", 
+                              "new iYali Glucose" = "green")) +
+  labs(x = "Time steps (h)", y = "Glucose and Propanote (g/L) - Biomass (gDCW/L)", color = "Variable") +
+  theme_minimal()+
+  theme(legend.title = element_blank())
+```
+
+```{r}
+# Calculate the residuals
+df_residuals <- glucoseprop2 %>%
+  mutate(residual_Biomass = `new iYali Biomass` - `real data Biomass`,
+         residual_Glucose = `new iYali Glucose` - `real data Glucose`,
+         residual_Propanoate = `new iYali Propanoate` - `real data Propanoate`) %>%
+  pivot_longer(cols = starts_with("residual"), names_to = "variable", values_to = "residual")
+
+# Plot the residuals
+ggplot(df_residuals, aes(x=Time, y=residual)) +
+  geom_point() +
+  facet_wrap(~ variable, scales = "free_y") +
+  theme_minimal() +
+  labs(x = "Time", y = "Residuals")
+```
+
+```{r}
+# Plot the residuals
+ggplot(df_residuals, aes(x=Time, y=residual, color=variable)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype="dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Time", y = "Residuals")
+```
+
+```{r}
+# Plot the residuals
+ggplot(df_residuals, aes(x=Time, y=residual, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Time (h)", y = "Residuals", title = "Residual from Biomass Growth in Propanoate and Glucose Medium")
+```
+
+```{r}
+# Calculate R^2 for Biomass
+R2_Biomass = cor(residueglucoseprop2$"new iYali Biomass", residueglucoseprop2$"real data Biomass")^2
+
+# Calculate R^2 for Glucose
+R2_Glucose = cor(residueglucoseprop2$"new iYali Glucose", residueglucoseprop2$"real data Glucose")^2
+
+# Calculate R^2 for Propanoate
+R2_Propanoate = cor(residueglucoseprop2$"new iYali Propanoate", residueglucoseprop2$"real data Propanoate")^2
+
+print(paste("R^2 for Biomass: ", R2_Biomass))
+print(paste("R^2 for Glucose: ", R2_Glucose))
+print(paste("R^2 for Propanoate: ", R2_Propanoate))
+```
+
+```{r}
+
+# Calculate RMSE for Biomass
+RMSE_Biomass = rmse(residueglucoseprop2$`new iYali Biomass`, residueglucoseprop2$`real data Biomass`)
+
+# Calculate RMSE for Glucose
+RMSE_Glucose = rmse(residueglucoseprop2$`new iYali Glucose`, residueglucoseprop2$`real data Glucose`)
+
+# Calculate RMSE for Propanoate
+RMSE_Propanoate = rmse(residueglucoseprop2$`new iYali Propanoate`, residueglucoseprop2$`real data Propanoate`)
+
+print(paste("RMSE for Biomass: ", RMSE_Biomass))
+print(paste("RMSE for Glucose: ", RMSE_Glucose))
+print(paste("RMSE for Propanoate: ", RMSE_Propanoate))
+```
+
+```{r}
+
+# Calculate MAE for Biomass
+MAE_Biomass = mae(residueglucoseprop2$`new iYali Biomass`, residueglucoseprop2$`real data Biomass`)
+
+# Calculate MAE for Glucose
+MAE_Glucose = mae(residueglucoseprop2$`new iYali Glucose`, residueglucoseprop2$`real data Glucose`)
+
+# Calculate MAE for Propanoate
+MAE_Propanoate = mae(residueglucoseprop2$`new iYali Propanoate`, residueglucoseprop2$`real data Propanoate`)
+
+print(paste("MAE for Biomass: ", MAE_Biomass))
+print(paste("MAE for Glucose: ", MAE_Glucose))
+print(paste("MAE for Propanoate: ", MAE_Propanoate))
+```
+
+```{r}
+# Get model data
+df_model1 <- residueglucoseprop2 %>%
+  select(Time, `new iYali Biomass`, `new iYali Glucose`, `new iYali Propanoate`) %>%
+  pivot_longer(cols = -Time, names_to = "Variable", values_to = "ModelValue")
+
+df_model1 <- df_model1 %>% mutate(Variable = str_replace_all(Variable, c("new iYali " = "")))
+
+# Get real data
+df_real1 <- residueglucoseprop2 %>%
+  select(Time, `real data Biomass`, `real data Glucose`, `real data Propanoate`) %>%
+  pivot_longer(cols = -Time, names_to = "Variable", values_to = "RealValue")
+
+df_real1 <- df_real1 %>% mutate(Variable = str_replace_all(Variable, c("real data " = "")))
+
+# Merge the two dataframes
+dferror1 <- left_join(df_model1, df_real1, by = c("Time", "Variable"))
+
+# Plot
+ggplot(dferror1, aes(x = RealValue, y = ModelValue, color = Variable, shape = Variable)) +
+  geom_point(size = 2.5) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Actual Value", y = "Predicted Value", color = "Variable", title = "Predicted value vs Real Data from \nBiomass Growth in Propanoate and Glucose Medium")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Plot
+ggplot(dferror1, aes(x = RealValue, y = ModelValue, color = Variable, shape = Variable)) +
+  geom_point(size = 2.5) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Actual Value", y = "Predicted Value", color = "Variable", title = "Predicted value vs Real Data from \nBiomass Growth in Propanoate and Glucose Medium") +
+  theme(plot.title = element_text(hjust = 0.5), 
+        plot.background = element_rect(colour = "black", size = 1))  # added black border frame
+
+```
+
+```{r}
+# Calculate residuals
+df_residuals1 <- residueglucoseprop2 %>%
+  gather(variable, ModelValue, c("new iYali Biomass", "new iYali Glucose", "new iYali Propanoate")) %>%
+  gather(variable2, RealValue, c("real data Biomass", "real data Glucose", "real data Propanoate")) %>%
+  filter(str_remove(variable, "new iYali ") == str_remove(variable2, "real data ")) %>%
+  mutate(error = RealValue - ModelValue)
+
+# Create a facetted histogram of residuals by variable
+plot2 <- ggplot(df_residuals1, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3", "new iYali Glucose" = "#FF6666", "new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals", y = "Density") +
+  theme_minimal() +
+  facet_wrap(~variable)+
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2))+
+  ggtitle("Error distribution in Model of Biomass Growth in Propionate and Glucose medium")
+```
+
+```{r}
+# Filter the data by variable
+df_Biomass1 <- df_residuals1[df_residuals1$variable == "new iYali Biomass",]
+df_Propanoate1 <- df_residuals1[df_residuals1$variable == "new iYali Propanoate",]
+df_Glucose1 <- df_residuals1[df_residuals1$variable == "new iYali Glucose",]
+
+# Create a histogram for each variable
+p1 <- ggplot(df_Biomass1, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3")) +
+  labs(x = "Residuals of Biomass Growth", y = "Density of Error") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2),
+        legend.position="none") +
+  scale_x_continuous(limits = c(-1, 1))+
+  scale_y_continuous(limits = c(0, 8))
+
+p2 <- ggplot(df_Propanoate1, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals of Propanoate Intake", y = "Density") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2),
+        legend.position="none") +
+  scale_x_continuous(limits = c(-1, 1))+
+  scale_y_continuous(limits = c(0, 3))
+
+p3 <- ggplot(df_Glucose1, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Glucose" = "#FF6666")) +
+  labs(x = "Residuals of Glucose Intake", y = "Density of Error") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2),
+        legend.position="none") +
+  scale_x_continuous(limits = c(-1, 1))+
+  scale_y_continuous(limits = c(0, 3))
+```
+
+```{r}
+# Arrange the plots
+grid.arrange(p1, p2, p3, ncol=1)
+grid.arrange(p1, p2, p3, ncol=3)
+```
+
+
+
+```{r}
+# Calculate the residuals
+df_residuals2 <- acetateprop %>%
+  mutate(residual_Biomass = `new iYali Biomass` - `real data Biomass`,
+         residual_Acetate = `new iYali Acetate` - `real data Acetate`,
+         residual_Propanoate = `new iYali Propanoate` - `real data Propanoate`) %>%
+  pivot_longer(cols = starts_with("residual"), names_to = "variable", values_to = "residual")
+
+# Plot the residuals
+ggplot(df_residuals2, aes(x=Time, y=residual, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Time (h)", y = "Residuals", title = "Residual from Biomass Growth in Propanoate and Acetate Medium")
+```
+
+
+
+```{r}
+# Calculate R^2 for Biomass
+R2_Biomass2 = cor(residueacetateprop2$"new iYali Biomass", residueacetateprop2$"real data Biomass")^2
+
+# Calculate R^2 for Acetate
+R2_Acetate2 = cor(residueacetateprop2$"new iYali Acetate", residueacetateprop2$"real data Acetate")^2
+
+# Calculate R^2 for Propanoate
+R2_Propanoate2 = cor(residueacetateprop2$"new iYali Propanoate", residueacetateprop2$"real data Propanoate")^2
+
+print(paste("R^2 for Biomass: ", R2_Biomass2))
+print(paste("R^2 for Acetate: ", R2_Acetate2))
+print(paste("R^2 for Propanoate: ", R2_Propanoate2))
+```
+
+```{r}
+# Calculate RMSE for Biomass
+RMSE_Biomass2 = rmse(residueacetateprop2$`new iYali Biomass`, residueacetateprop2$`real data Biomass`)
+
+# Calculate RMSE for Glucose
+RMSE_Acetate2 = rmse(residueacetateprop2$`new iYali Acetate`, residueacetateprop2$`real data Acetate`)
+
+# Calculate RMSE for Propanoate
+RMSE_Propanoate2 = rmse(residueacetateprop2$`new iYali Propanoate`, residueacetateprop2$`real data Propanoate`)
+
+print(paste("RMSE for Biomass: ", RMSE_Biomass2))
+print(paste("RMSE for Acetate: ", RMSE_Acetate2))
+print(paste("RMSE for Propanoate: ", RMSE_Propanoate2))
+```
+
+```{r}
+# Calculate MAE for Biomass
+MAE_Biomass2 = mae(residueacetateprop2$`new iYali Biomass`, residueacetateprop2$`real data Biomass`)
+
+# Calculate MAE for Glucose
+MAE_Acetate2 = mae(residueacetateprop2$`new iYali Acetate`, residueacetateprop2$`real data Acetate`)
+
+# Calculate MAE for Propanoate
+MAE_Propanoate2 = mae(residueacetateprop2$`new iYali Propanoate`, residueacetateprop2$`real data Propanoate`)
+
+print(paste("MAE for Biomass: ", MAE_Biomass2))
+print(paste("MAE for Acetate: ", MAE_Acetate2))
+print(paste("MAE for Propanoate: ", MAE_Propanoate2))
+```
+
+```{r}
+# Calculate residuals
+df_residuals2 <- residueacetateprop2 %>%
+  gather(variable, ModelValue, c("new iYali Biomass", "new iYali Acetate", "new iYali Propanoate")) %>%
+  gather(variable2, RealValue, c("real data Biomass", "real data Acetate", "real data Propanoate")) %>%
+  filter(str_remove(variable, "new iYali ") == str_remove(variable2, "real data ")) %>%
+  mutate(error = RealValue - ModelValue)
+
+# Create a facetted histogram of residuals by variable
+ggplot(df_residuals2, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3", "new iYali Acetate" = "#FF6666", "new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals", y = "Density") +
+  theme_minimal() +
+  facet_wrap(~variable, labeller = label_both) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2)) +
+  ggtitle("Error distribution in Model of Biomass Growth in Propionate and Acetate medium")
+```
+
+```{r}
+# Filter the data by variable
+df_Biomass2 <- df_residuals2[df_residuals2$variable == "new iYali Biomass",]
+df_Propanoate2 <- df_residuals2[df_residuals2$variable == "new iYali Propanoate",]
+df_Acetate2 <- df_residuals2[df_residuals2$variable == "new iYali Acetate",]
+
+# Create a histogram for each variable
+p4 <- ggplot(df_Biomass2, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3")) +
+  labs(x = "Residuals of Biomass Growth", y = "Density of Error") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2),
+        legend.position="none") +
+  scale_x_continuous(limits = c(-1, 1))+
+  scale_y_continuous(limits = c(0, 8))
+
+p5 <- ggplot(df_Propanoate2, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals of Propanoate Intake", y = "Density") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2),
+        legend.position="none") +
+  scale_x_continuous(limits = c(-1, 1))+
+  scale_y_continuous(limits = c(0, 3))
+
+p6 <- ggplot(df_Acetate2, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Acetate" = "#FF6666")) +
+  labs(x = "Residuals of Acetate Intake", y = "Density of Error") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2),
+        legend.position="none") +
+  scale_x_continuous(limits = c(-1, 1))+
+  scale_y_continuous(limits = c(0, 3))
+
+# Arrange the plots
+grid.arrange(p4, p5, p6, ncol=3)
+```
+
+
+
+```{r}
+# Get model data
+df_model2 <- residueacetateprop2 %>%
+  select(Time, `new iYali Biomass`, `new iYali Acetate`, `new iYali Propanoate`) %>%
+  pivot_longer(cols = -Time, names_to = "Variable", values_to = "ModelValue")
+
+df_model2 <- df_model2 %>% mutate(Variable = str_replace_all(Variable, c("new iYali " = "")))
+
+# Get real data
+df_real2 <- residueacetateprop2 %>%
+  select(Time, `real data Biomass`, `real data Acetate`, `real data Propanoate`) %>%
+  pivot_longer(cols = -Time, names_to = "Variable", values_to = "RealValue")
+
+df_real2 <- df_real2 %>% mutate(Variable = str_replace_all(Variable, c("real data " = "")))
+
+# Merge the two dataframes
+dferror2 <- left_join(df_model2, df_real2, by = c("Time", "Variable"))
+
+# Plot
+ggplot(dferror2, aes(x = RealValue, y = ModelValue, color = Variable, shape = Variable)) +
+  geom_point(size = 2.5, stroke = 1) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Actual Value", y = "Predicted Value", color = "Variable", title = "Predicted value vs Real Data from \nBiomass Growth in Propanoate and Acetate Medium")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Plot
+ggplot(dferror2, aes(x = RealValue, y = ModelValue, fill = Variable, shape = Variable)) +
+  geom_point(size = 2.5, color = "black") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Actual Value", y = "Predicted Value", color = "Variable", title = "Predicted value vs Real Data from \nBiomass Growth in Propanoate and Acetate Medium") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_shape_manual(values=c(21, 24, 22)) 
+
+```
+
+
+```{r}
+# Calculate the residuals
+df_residuals3 <- propionate %>%
+  mutate(residual_Biomass = `new iYali Biomass` - `real data Biomass`,
+         residual_Propanoate = `new iYali Propanoate` - `real data Propanoate`) %>%
+  pivot_longer(cols = starts_with("residual"), names_to = "variable", values_to = "residual")
+
+# Plot the residuals
+ggplot(df_residuals3, aes(x=time, y=residual, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  geom_hline(yintercept=0, linetype="dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Time (h)", y = "Residuals", title = "Residual from Biomass Growth in Propanoate Medium")
+```
+
+```{r}
+# Calculate R^2 for Biomass
+R2_Biomass3 = cor(residueprop2$"new iYali Biomass", residueprop2$"real data Biomass")^2
+
+# Calculate R^2 for Propanoate
+R2_Propanoate3 = cor(residueprop2$"new iYali Propanoate", residueprop2$"real data Propanoate")^2
+
+print(paste("R^2 for Biomass: ", R2_Biomass3))
+print(paste("R^2 for Propanoate: ", R2_Propanoate3))
+```
+
+```{r}
+# Calculate RMSE for Biomass
+RMSE_Biomass3 = rmse(residueprop2$`new iYali Biomass`, residueprop2$`real data Biomass`)
+
+# Calculate RMSE for Propanoate
+RMSE_Propanoate3 = rmse(residueprop2$`new iYali Propanoate`, residueprop2$`real data Propanoate`)
+
+print(paste("RMSE for Biomass: ", RMSE_Biomass3))
+print(paste("RMSE for Propanoate: ", RMSE_Propanoate3))
+```
+
+```{r}
+# Calculate MAE for Biomass
+MAE_Biomass3 = mae(residueprop2$`new iYali Biomass`, residueprop2$`real data Biomass`)
+
+# Calculate MAE for Propanoate
+MAE_Propanoate3 = mae(residueprop2$`new iYali Propanoate`, residueprop2$`real data Propanoate`)
+
+print(paste("MAE for Biomass: ", MAE_Biomass2))
+print(paste("MAE for Propanoate: ", MAE_Propanoate2))
+```
+
+```{r}
+# Get model data
+df_model3 <- residueprop2 %>%
+  select(Time, `new iYali Biomass`, `new iYali Propanoate`) %>%
+  pivot_longer(cols = -Time, names_to = "Variable", values_to = "ModelValue")
+
+df_model3 <- df_model3 %>% mutate(Variable = str_replace_all(Variable, c("new iYali " = "")))
+
+# Get real data
+df_real3 <- residueprop2 %>%
+  select(Time, `real data Biomass`, `real data Propanoate`) %>%
+  pivot_longer(cols = -Time, names_to = "Variable", values_to = "RealValue")
+
+df_real3 <- df_real3 %>% mutate(Variable = str_replace_all(Variable, c("real data " = "")))
+
+# Merge the two dataframes
+dferror3 <- left_join(df_model3, df_real3, by = c("Time", "Variable"))
+
+# Plot
+ggplot(dferror3, aes(x = RealValue, y = ModelValue, color = Variable, shape = Variable)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "Actual Value", y = "Predicted Value", color = "Variable", title = "Predicted value vs Real Data from \nBiomass Growth in Propanoate Medium") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+# Calculate residuals
+df_residuals3 <- residueprop2 %>%
+  gather(variable, ModelValue, c("new iYali Biomass", "new iYali Propanoate")) %>%
+  gather(variable2, RealValue, c("real data Biomass", "real data Propanoate")) %>%
+  filter(str_remove(variable, "new iYali ") == str_remove(variable2, "real data ")) %>%
+  mutate(error = RealValue - ModelValue)
+
+# Create a facetted histogram of residuals by variable
+ggplot(df_residuals3, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3", "new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals", y = "Density") +
+  theme_minimal() +
+  facet_wrap(~variable)+
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2)) 
+```
+
+```{r}
+# Create a facetted histogram of residuals by variable
+ggplot(df_residuals3, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3", "new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals", y = "Density") +
+  theme_minimal() +
+  facet_wrap(~variable, scales = "free", labeller = label_both) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2)) +
+  ggtitle("Error distribution in Model of Biomass Growth in Propionate medium")
+```
+
+```{r}
+# Filter the data by variable
+df_Biomass <- df_residuals3[df_residuals3$variable == "new iYali Biomass",]
+df_Propanoate <- df_residuals3[df_residuals3$variable == "new iYali Propanoate",]
+
+# Create a histogram for each variable
+p1 <- ggplot(df_Biomass, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Biomass" = "dodgerblue3")) +
+  labs(x = "Residuals", y = "Density") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2)) +
+  ggtitle("Error distribution in Model of Biomass Growth in Propionate medium") +
+  scale_x_continuous(limits = c(-4, 1))
+
+p2 <- ggplot(df_Propanoate, aes(x=error, fill=variable)) +
+  geom_histogram(aes(y=..density..), bins=30, color="black") +
+  geom_density(alpha=.2) +
+  scale_fill_manual(values=c("new iYali Propanoate" = "#32CD32")) +
+  labs(x = "Residuals", y = "Density") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=2)) +
+  ggtitle("Error distribution in Model of Biomass Growth in Propionate medium") +
+  scale_x_continuous(limits = c(-1, 1))
+
+# Arrange the plots
+grid.arrange(p1, p2, ncol=1)
+```
+
+
