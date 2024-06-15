@@ -6,6 +6,6 @@ This thesis aims to address the pressing need for sustainable alternatives to co
 
 ## Some Results
 
-![image1](%OCFA.png)
+![image1](%OCFA2.png)
 ![image2](bitmapheatmap4.png)
 ![image3](glucosepropgraph2.png)
